@@ -43,7 +43,7 @@ class HeDynamicDNS:
             "myip": self.ip
         }
         req = requests.post(post_url, data=post_data)
-        req_content = req.content
+        req_content = req.content.decode()
         return req_content
 
 # namecheap

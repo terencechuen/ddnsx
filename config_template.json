@@ -1,8 +1,0 @@
-{
-  "domain.com": {
-    "ddns": {
-      "ServiceProvider": "he.net",
-      "PassWord": "abc123"
-    }
-  }
-}
