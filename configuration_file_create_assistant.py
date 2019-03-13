@@ -15,6 +15,7 @@ def get_basic_info():
     print("# 请选择您的DNS服务商")
     print("# Please choose your DNS service provider")
     print("1. he.net")
+    print("2. gandi.net")
     service_provider = input()
     print("\n")
 
@@ -83,13 +84,37 @@ class HeNetConfig:
         return self.basic_info
 
 
+class GandiNetConf:
+    def __init__(self, basic_info, api_key):
+        self.basic_info = basic_info
+        self.api_key = api_key
+
+    @staticmethod
+    def get_gandi_net_info():
+        print("# 请输入您 gandi.net 的API KEY")
+        print("# Please enter your he.net API KEY")
+        gandi_api_key = input()
+        return gandi_api_key
+
+    def gen_gandi_net_config(self):
+        self.basic_info['api_key'] = self.api_key
+        return self.basic_info
+
+
 def proc_config():
     basic_info = get_basic_info()
+
     if basic_info['service_provider'] == "1":
         del basic_info['service_provider']
         he_net_password = HeNetConfig.get_he_net_info()
         he_net_config = HeNetConfig(basic_info, he_net_password)
         return he_net_config.gen_he_net_config(), "he.net"
+
+    if basic_info['service_provider'] == "2":
+        del basic_info['service_provider']
+        gandi_net_api_key = GandiNetConf.get_gandi_net_info()
+        gandi_net_config = GandiNetConf(basic_info, gandi_net_api_key)
+        return gandi_net_config.gen_gandi_net_config(), "gandi.net"
 
 
 def proc_config_final(config_final, config_input, service_provider):
