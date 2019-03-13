@@ -16,6 +16,7 @@ def get_basic_info():
     print("# Please choose your DNS service provider")
     print("1. he.net")
     print("2. gandi.net")
+    print("3. godaddy.com")
     service_provider = input()
     print("\n")
 
@@ -101,6 +102,30 @@ class GandiNetConf:
         return self.basic_info
 
 
+class GodaddyComConf:
+    def __init__(self, basic_info, api_key, api_secret):
+        self.basic_info = basic_info
+        self.api_key = api_key
+        self.api_secret = api_secret
+
+    @staticmethod
+    def get_godaddy_com_info():
+        print("# 请输入您 godaddy.com 的API KEY")
+        print("# Please enter your  godaddy.com API KEY")
+        godaddy_com_api_key = input()
+
+        print("# 请输入您 godaddy.com 的API SECRET")
+        print("# Please enter your  godaddy.com API SECRET")
+        godaddy_com_api_secret = input()
+
+        return {"api_key": godaddy_com_api_key, "api_secret": godaddy_com_api_secret}
+
+    def gen_godaddy_com_config(self):
+        self.basic_info['api_key'] = self.api_key
+        self.basic_info['api_secret'] = self.api_secret
+        return self.basic_info
+
+
 def proc_config():
     basic_info = get_basic_info()
 
@@ -115,6 +140,13 @@ def proc_config():
         gandi_net_api_key = GandiNetConf.get_gandi_net_info()
         gandi_net_config = GandiNetConf(basic_info, gandi_net_api_key)
         return gandi_net_config.gen_gandi_net_config(), "gandi.net"
+
+    if basic_info['service_provider'] == "3":
+        del basic_info['service_provider']
+        godaddy_com_api_info = GodaddyComConf.get_godaddy_com_info()
+        godaddy_com_config = GodaddyComConf(basic_info, godaddy_com_api_info['api_key'],
+                                            godaddy_com_api_info['api_secret'])
+        return godaddy_com_config.gen_godaddy_com_config(), "godaddy.com"
 
 
 def proc_config_final(config_final, config_input, service_provider):

@@ -68,3 +68,30 @@ for i in service_provider:
             else:
                 update_record = modify_main.update_record(record_type, my_ip)
                 print(update_record)
+
+    elif i == "godaddy.com":
+        from main_func.GodaddyDynDNS import *
+
+        for k in config_json[i]:
+            api_key = k['api_key']
+            api_secret = k['api_secret']
+            domain_name = k['domain_name']
+            sub_domain = k['sub_domain']
+            record_type = k['record_type']
+            my_ip = get_my_ip(k['ip_version'])
+
+            godaddy_main = GodaddyDynDNS(api_key, api_secret, domain_name, sub_domain, record_type, my_ip)
+
+            chk_domain = godaddy_main.chk_domain()
+            if chk_domain:
+                update_record = godaddy_main.update_record()
+                if update_record:
+                    pass
+                else:
+                    print(update_record)
+            elif chk_domain is None:
+                add_record = godaddy_main.add_record()
+                if add_record:
+                    pass
+                else:
+                    print(add_record)
