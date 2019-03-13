@@ -15,6 +15,7 @@ except Exception as e:
     exit(1)
 else:
     config_content = o.read()
+    o.close()
     config_json = json.loads(config_content)
 
 service_provider = list(config_json.keys())
@@ -95,3 +96,25 @@ for i in service_provider:
                     pass
                 else:
                     print(add_record)
+
+    elif i == "dnspod.cn":
+        from main_func.DnspodDynDNS import *
+
+        for k in config_json[i]:
+            secret_id = k['secret_id']
+            secret_key = k['secret_key']
+            domain_name = k['domain_name']
+            sub_domain = k['sub_domain']
+            record_type = k['record_type']
+            my_ip = get_my_ip(k['ip_version'])
+
+            dnspod_main = DnspodDynDNS(secret_id, secret_key, domain_name, sub_domain, record_type, my_ip)
+
+            record_info = dnspod_main.get_record_info()
+            if record_id is None:
+                create_record = dnspod_main.create_record()
+            else:
+                if record_info[0] == my_ip:
+                    pass
+                else:
+                    dnspod_main.update_record(record_info[1])

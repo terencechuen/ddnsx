@@ -17,6 +17,7 @@ def get_basic_info():
     print("1. he.net")
     print("2. gandi.net")
     print("3. godaddy.com")
+    print("4. dnspod.cn")
     service_provider = input()
     print("\n")
 
@@ -126,6 +127,30 @@ class GodaddyComConf:
         return self.basic_info
 
 
+class DnspodCnConf:
+    def __init__(self, basic_info, secret_id, secret_key):
+        self.basic_info = basic_info
+        self.secret_id = secret_id
+        self.secret_key = secret_key
+
+    @staticmethod
+    def get_dnspod_cn_info():
+        print("# 请输入您 dnspod.cn 的API KEY")
+        print("# Please enter your  dnspod.cn API KEY")
+        dnspod_cn_secret_id = input()
+
+        print("# 请输入您 dnspod.cn 的API SECRET")
+        print("# Please enter your  dnspod.cn API SECRET")
+        dnspod_cn_secret_key = input()
+
+        return {"secret_id": dnspod_cn_secret_id, "secret_key": dnspod_cn_secret_key}
+
+    def gen_dnspod_cn_config(self):
+        self.basic_info['secret_id'] = self.secret_id
+        self.basic_info['secret_key'] = self.secret_key
+        return self.basic_info
+
+
 def proc_config():
     basic_info = get_basic_info()
 
@@ -147,6 +172,13 @@ def proc_config():
         godaddy_com_config = GodaddyComConf(basic_info, godaddy_com_api_info['api_key'],
                                             godaddy_com_api_info['api_secret'])
         return godaddy_com_config.gen_godaddy_com_config(), "godaddy.com"
+
+    if basic_info['service_provider'] == "4":
+        del basic_info['service_provider']
+        dnspod_cn_api_info = DnspodCnConf.get_dnspod_cn_info()
+        dnspod_cn_config = DnspodCnConf(basic_info, dnspod_cn_api_info['secret_id'],
+                                        dnspod_cn_api_info['secret_key'])
+        return dnspod_cn_config.gen_dnspod_cn_config(), "dnspod.cn"
 
 
 def proc_config_final(config_final, config_input, service_provider):
