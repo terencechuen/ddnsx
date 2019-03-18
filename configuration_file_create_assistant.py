@@ -51,14 +51,14 @@ def get_basic_info():
 
     # 交互：获取IP版本，如果解析类型位TXT则要求手动输入
     # 如果解析类型为A，则为IPv4；若为AAAA，则为IPv6
-    if record_type == "3":
+    if record_type == "TXT":
         print("# 请选择您的IP版本")
         print("# Please choose your DNS service provider")
         print("1. IPv4")
         print("2. IPv6")
         ip_version = input()
         print("\n")
-    elif record_type == "1":
+    elif record_type == "A":
         ip_version = "4"
     else:
         ip_version = "6"
@@ -117,11 +117,11 @@ def gen_godaddy_com_info(basic_info):
 def gen_dnspod_cn_info(basic_info):
     print("# 请输入您 dnspod.cn 的API KEY")
     print("# Please enter your  dnspod.cn API KEY")
-    dnspod_cn_secret_id = input()
+    dnspod_cn_secret_key = input()
 
     print("# 请输入您 dnspod.cn 的API SECRET")
     print("# Please enter your  dnspod.cn API SECRET")
-    dnspod_cn_secret_key = input()
+    dnspod_cn_secret_id = input()
 
     basic_info['secret_id'] = dnspod_cn_secret_id
     basic_info['secret_key'] = dnspod_cn_secret_key

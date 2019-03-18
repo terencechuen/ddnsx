@@ -1,5 +1,6 @@
 import os
 import json
+import time
 from dns import resolver
 from main_func.GetMyIP import *
 
@@ -53,14 +54,8 @@ def compare_ip_with_dig(full_domain, rr_type, ip_now):
 
 
 def write_to_log(full_domain, newest_ip, rr_type, update_status, output_msg):
-    log_content = {
-        "full_domain": full_domain,
-        "newest_ip": newest_ip,
-        "rr_type": rr_type,
-        "update_status": update_status,
-        "output_msg": output_msg
-    }
-    log_content = json.dumps(log_content) + '\n'
+    time_now = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
+    log_content = time_now + ' ' + full_domain + " " + newest_ip + " " + rr_type + " " + update_status + " " + output_msg + '\n'
     o_log = open(log_file_path, "a")
     o_log.write(log_content)
     o_log.close()
@@ -83,7 +78,7 @@ for i in service_provider:
                 continue
             else:
                 req_content = HeDynamicDNS(password, full_domain, my_ip).req_content()
-                write_to_log(full_domain, my_ip, record_type, "update success", req_content)
+                write_to_log(full_domain, my_ip, record_type, "update_success", req_content)
 
     # gandi.net
     elif i == "gandi.net":
@@ -102,17 +97,17 @@ for i in service_provider:
             if domain_record is None:
                 req_content = gandi_main.create_record(record_type, my_ip)
                 if req_content[0]:
-                    write_to_log(sub_domain + '.' + domain_name, my_ip, record_type, "create success", req_content[1])
+                    write_to_log(sub_domain + '.' + domain_name, my_ip, record_type, "create_success", req_content[1])
                 else:
-                    write_to_log(sub_domain + '.' + domain_name, my_ip, record_type, "create fail", req_content[1])
+                    write_to_log(sub_domain + '.' + domain_name, my_ip, record_type, "create_fail", req_content[1])
             elif domain_record == my_ip:
                 pass
             else:
                 req_content = gandi_main.update_record(record_type, my_ip)
                 if req_content[0]:
-                    write_to_log(sub_domain + '.' + domain_name, my_ip, record_type, "update success", req_content[1])
+                    write_to_log(sub_domain + '.' + domain_name, my_ip, record_type, "update_success", req_content[1])
                 else:
-                    write_to_log(sub_domain + '.' + domain_name, my_ip, record_type, "update fail", req_content[1])
+                    write_to_log(sub_domain + '.' + domain_name, my_ip, record_type, "update_fail", req_content[1])
 
     # godaddy.com
     elif i == "godaddy.com":
@@ -134,10 +129,10 @@ for i in service_provider:
                     continue
                 else:
                     req_content = godaddy_main.update_record()
-                    write_to_log(sub_domain + '.' + domain_name, my_ip, record_type, "update success", req_content)
+                    write_to_log(sub_domain + '.' + domain_name, my_ip, record_type, "update_success", req_content)
             elif domain_record is None:
                 req_content = godaddy_main.add_record()
-                write_to_log(sub_domain + '.' + domain_name, my_ip, record_type, "create success", req_content)
+                write_to_log(sub_domain + '.' + domain_name, my_ip, record_type, "create_success", req_content)
             else:
                 pass
 
@@ -157,10 +152,18 @@ for i in service_provider:
             record_info = dnspod_main.get_record()
             if record_info is None:
                 req_content = dnspod_main.create_record()
-                write_to_log(sub_domain + '.' + domain_name, my_ip, record_type, "create success", req_content)
+                if req_content[0]:
+                    write_to_log(sub_domain + '.' + domain_name, my_ip, record_type, "create_success", '')
+                else:
+                    write_to_log(sub_domain + '.' + domain_name, my_ip, record_type, "create_fail", req_content[1])
+            elif record_info[0] is False:
+                write_to_log(sub_domain + '.' + domain_name, my_ip, record_type, "update_fail", record_info[1])
             else:
                 if record_info[0] == my_ip:
                     continue
                 else:
                     req_content = dnspod_main.update_record(record_info[1])
-                    write_to_log(sub_domain + '.' + domain_name, my_ip, record_type, "create success", req_content)
+                    if req_content:
+                        write_to_log(sub_domain + '.' + domain_name, my_ip, record_type, "update_success", '')
+                    else:
+                        write_to_log(sub_domain + '.' + domain_name, my_ip, record_type, "update_fail", req_content[1])

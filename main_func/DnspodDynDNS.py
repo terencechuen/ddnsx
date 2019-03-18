@@ -26,12 +26,15 @@ class DnspodDynDNS:
         services = QcloudApi('cns', self.config)
         call_api = services.call('RecordList', action_params)
         get_records = json.loads(call_api.decode())
-        get_records = get_records['data']['records']
 
-        if len(get_records) == 0:
-            return None
+        if get_records["codeDesc"] == "Success":
+            get_records = get_records['data']['records']
+            if len(get_records) == 0:
+                return None
+            else:
+                return get_records[0]['value'], get_records[0]['id']
         else:
-            return get_records['value'], get_records['id']
+            return False, get_records
 
     def create_record(self):
         action_params = {
