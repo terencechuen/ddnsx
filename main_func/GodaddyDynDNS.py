@@ -12,7 +12,7 @@ class GodaddyDynDNS:
         self.rr_type = rr_type
         self.my_ip = my_ip
 
-    def chk_domain(self):
+    def get_record(self):
         url = 'https://api.godaddy.com/v1/domains/' + self.domain_name + '/records/' + self.rr_type + '/' + self.sub_domain
         headers = {
             "Content-Type": "application/json",
@@ -23,12 +23,12 @@ class GodaddyDynDNS:
         r_content = json.loads(r_content)
 
         if r.status_code is 200:
-            if len(r_content) > 0:
-                return True
+            if len(r_content) == 0:
+                return None, None
             else:
-                return None
+                return True, r_content[0]["data"]
         else:
-            return r_content
+            return False, r_content
 
     def add_record(self):
         url = 'https://api.godaddy.com/v1/domains/' + self.domain_name + '/records'

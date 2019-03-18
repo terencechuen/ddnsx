@@ -1,15 +1,17 @@
 import os
 import json
+from dns import resolver
 from main_func.GetMyIP import *
 
 config_file_path = os.getcwd() + '/config.json'
+log_file_path = os.getcwd() + '/ddnsx.log'
 
 # 尝试读取配置文件
 config_json = ''
 try:
     o = open(config_file_path, 'r')
 except Exception as e:
-    print("# 出现错误，以下为错误信息：")
+    print("# 读取配置文件错误，以下为错误信息：")
     print(e)
     print("# 程序退出")
     exit(1)
@@ -19,28 +21,71 @@ else:
     config_json = json.loads(config_content)
 
 service_provider = list(config_json.keys())
-my_ipv4 = GetMyIP.ipv4()
-my_ipv6 = GetMyIP.ipv6()
+
+# 获取IPv4的IP地址
+my_ipv4 = ipv4()
+if my_ipv4[0]:
+    my_ipv4 = my_ipv4[1]
+else:
+    my_ipv4 = False
+
+# 获取IPv6的IP地址
+my_ipv6 = ipv6()
+if my_ipv6[0]:
+    my_ipv6 = my_ipv6[1]
+else:
+    my_ipv6 = False
 
 
-def get_my_ip(ip_version):
-    if ip_version == 4:
+def get_my_ip(ip_ver):
+    if ip_ver == '4':
         return my_ipv4
-    else:
+    elif ip_ver == '6':
         return my_ipv6
 
 
+def compare_ip_with_dig(full_domain, rr_type, ip_now):
+    dig_content = resolver.query(full_domain, rr_type)
+    if dig_content == ip_now:
+        return False
+    else:
+        return dig_content[0]
+
+
+def write_to_log(full_domain, newest_ip, rr_type, update_status, output_msg):
+    log_content = {
+        "full_domain": full_domain,
+        "newest_ip": newest_ip,
+        "rr_type": rr_type,
+        "update_status": update_status,
+        "output_msg": output_msg
+    }
+    log_content = json.dumps(log_content) + '\n'
+    o_log = open(log_file_path, "a")
+    o_log.write(log_content)
+    o_log.close()
+
+
+# 遍历配置文件
 for i in service_provider:
+
+    # he.net
     if i == "he.net":
         from main_func.HeDynDNS import *
 
         for k in config_json[i]:
             password = k['password']
             full_domain = k['full_domain']
+            record_type = k['record_type']
             my_ip = get_my_ip(k['ip_version'])
 
-            req_content = HeDynamicDNS(password, full_domain, my_ip).req_content()
+            if compare_ip_with_dig(full_domain, record_type, my_ip) is False:
+                continue
+            else:
+                req_content = HeDynamicDNS(password, full_domain, my_ip).req_content()
+                write_to_log(full_domain, my_ip, record_type, "update success", req_content)
 
+    # gandi.net
     elif i == "gandi.net":
         from main_func.GandiDynDNS import *
 
@@ -51,25 +96,25 @@ for i in service_provider:
             record_type = k['record_type']
             my_ip = get_my_ip(k['ip_version'])
 
-            get_info_main = GandiGetInfo(api_key, domain_name)
-            modify_main = GandiModifyRecord(api_key, domain_name, sub_domain)
+            gandi_main = GandiDynDNS(api_key, domain_name, sub_domain)
 
-            chk_domain = get_info_main.chk_domain()
-
-            if chk_domain:
-                domain_records = get_info_main.get_domain_records(sub_domain)
+            domain_record = gandi_main.get_domain_records()
+            if domain_record is None:
+                req_content = gandi_main.create_record(record_type, my_ip)
+                if req_content[0]:
+                    write_to_log(sub_domain + '.' + domain_name, my_ip, record_type, "create success", req_content[1])
+                else:
+                    write_to_log(sub_domain + '.' + domain_name, my_ip, record_type, "create fail", req_content[1])
+            elif domain_record == my_ip:
+                pass
             else:
-                print('域名不存在')
-                continue
+                req_content = gandi_main.update_record(record_type, my_ip)
+                if req_content[0]:
+                    write_to_log(sub_domain + '.' + domain_name, my_ip, record_type, "update success", req_content[1])
+                else:
+                    write_to_log(sub_domain + '.' + domain_name, my_ip, record_type, "update fail", req_content[1])
 
-            if domain_records is None:
-                add_record = modify_main.add_record(record_type, my_ip)
-            elif domain_records == my_ipv4:
-                print('same')
-            else:
-                update_record = modify_main.update_record(record_type, my_ip)
-                print(update_record)
-
+    # godaddy.com
     elif i == "godaddy.com":
         from main_func.GodaddyDynDNS import *
 
@@ -83,19 +128,18 @@ for i in service_provider:
 
             godaddy_main = GodaddyDynDNS(api_key, api_secret, domain_name, sub_domain, record_type, my_ip)
 
-            chk_domain = godaddy_main.chk_domain()
-            if chk_domain:
-                update_record = godaddy_main.update_record()
-                if update_record:
-                    pass
+            domain_record = godaddy_main.get_record()
+            if domain_record[0]:
+                if domain_record[1] == my_ip:
+                    continue
                 else:
-                    print(update_record)
-            elif chk_domain is None:
-                add_record = godaddy_main.add_record()
-                if add_record:
-                    pass
-                else:
-                    print(add_record)
+                    req_content = godaddy_main.update_record()
+                    write_to_log(sub_domain + '.' + domain_name, my_ip, record_type, "update success", req_content)
+            elif domain_record is None:
+                req_content = godaddy_main.add_record()
+                write_to_log(sub_domain + '.' + domain_name, my_ip, record_type, "create success", req_content)
+            else:
+                pass
 
     elif i == "dnspod.cn":
         from main_func.DnspodDynDNS import *
@@ -110,11 +154,13 @@ for i in service_provider:
 
             dnspod_main = DnspodDynDNS(secret_id, secret_key, domain_name, sub_domain, record_type, my_ip)
 
-            record_info = dnspod_main.get_record_info()
-            if record_id is None:
-                create_record = dnspod_main.create_record()
+            record_info = dnspod_main.get_record()
+            if record_info is None:
+                req_content = dnspod_main.create_record()
+                write_to_log(sub_domain + '.' + domain_name, my_ip, record_type, "create success", req_content)
             else:
                 if record_info[0] == my_ip:
-                    pass
+                    continue
                 else:
-                    dnspod_main.update_record(record_info[1])
+                    req_content = dnspod_main.update_record(record_info[1])
+                    write_to_log(sub_domain + '.' + domain_name, my_ip, record_type, "create success", req_content)

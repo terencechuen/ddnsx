@@ -17,7 +17,7 @@ class DnspodDynDNS:
             'SignatureMethod': 'HmacSHA1'
         }
 
-    def get_record_info(self):
+    def get_record(self):
         action_params = {
             "domain": self.domain_name,
             "subDomain": self.sub_domain,
@@ -28,13 +28,10 @@ class DnspodDynDNS:
         get_records = json.loads(call_api.decode())
         get_records = get_records['data']['records']
 
-        if len(get_records) > 0:
-            for i in get_records:
-                if i['type'] == self.rr_type:
-                    return i['value'], i['id']
+        if len(get_records) == 0:
             return None
         else:
-            return None
+            return get_records['value'], get_records['id']
 
     def create_record(self):
         action_params = {

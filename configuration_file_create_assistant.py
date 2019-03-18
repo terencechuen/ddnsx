@@ -1,6 +1,8 @@
-import json, os
+import json
+import os
 
 
+# 交互：获取域名、子域名、DNS服务商、DNS记录类型以及IP版本
 def get_basic_info():
     print("# 请输入您的域名")
     print("# Please enter your domain name")
@@ -21,6 +23,7 @@ def get_basic_info():
     service_provider = input()
     print("\n")
 
+    # 交互：获取解析类型
     while True:
         print("# 请选择您的DNS记录类型")
         print("# Please select your DNS record type")
@@ -38,12 +41,16 @@ def get_basic_info():
         elif record_type is "2":
             record_type = "AAAA"
             break
-        else:
+        elif record_type is "3":
             record_type = "TXT"
             break
+        else:
+            continue
 
     print("\n")
 
+    # 交互：获取IP版本，如果解析类型位TXT则要求手动输入
+    # 如果解析类型为A，则为IPv4；若为AAAA，则为IPv6
     if record_type == "3":
         print("# 请选择您的IP版本")
         print("# Please choose your DNS service provider")
@@ -56,6 +63,7 @@ def get_basic_info():
     else:
         ip_version = "6"
 
+    # 输出字典
     output_dict = {
         "domain_name": domain_name,
         "sub_domain": sub_domain,
@@ -66,89 +74,59 @@ def get_basic_info():
     return output_dict
 
 
-class HeNetConfig:
+# 建立he.net的配置文件
+def gen_he_net_config(basic_info):
+    print("# 请输入您 he.net 的账户密码")
+    print("# Please enter your he.net account password")
+    he_net_password = input()
 
-    def __init__(self, basic_info, password):
-        self.basic_info = basic_info
-        self.password = password
+    full_domain = basic_info['sub_domain'] + '.' + basic_info['domain_name']
+    basic_info['password'] = he_net_password
+    basic_info['full_domain'] = full_domain
 
-    @staticmethod
-    def get_he_net_info():
-        print("# 请输入您 he.net 的账户密码")
-        print("# Please enter your he.net account password")
-        he_net_password = input()
-        return he_net_password
-
-    def gen_he_net_config(self):
-        full_domain = self.basic_info['sub_domain'] + '.' + self.basic_info['domain_name']
-        self.basic_info['password'] = self.password
-        self.basic_info['full_domain'] = full_domain
-        return self.basic_info
+    return basic_info
 
 
-class GandiNetConf:
-    def __init__(self, basic_info, api_key):
-        self.basic_info = basic_info
-        self.api_key = api_key
+# 建立gandi.net的配置文件
+def gen_gandi_net_info(basic_info):
+    print("# 请输入您 gandi.net 的API KEY")
+    print("# Please enter your gandi.net API KEY")
+    gandi_api_key = input()
 
-    @staticmethod
-    def get_gandi_net_info():
-        print("# 请输入您 gandi.net 的API KEY")
-        print("# Please enter your he.net API KEY")
-        gandi_api_key = input()
-        return gandi_api_key
-
-    def gen_gandi_net_config(self):
-        self.basic_info['api_key'] = self.api_key
-        return self.basic_info
+    basic_info['api_key'] = gandi_api_key
+    return basic_info
 
 
-class GodaddyComConf:
-    def __init__(self, basic_info, api_key, api_secret):
-        self.basic_info = basic_info
-        self.api_key = api_key
-        self.api_secret = api_secret
+# 建立godaddy.com的配置文件
+def gen_godaddy_com_info(basic_info):
+    print("# 请输入您 godaddy.com 的API KEY")
+    print("# Please enter your  godaddy.com API KEY")
+    godaddy_com_api_key = input()
 
-    @staticmethod
-    def get_godaddy_com_info():
-        print("# 请输入您 godaddy.com 的API KEY")
-        print("# Please enter your  godaddy.com API KEY")
-        godaddy_com_api_key = input()
+    print("# 请输入您 godaddy.com 的API SECRET")
+    print("# Please enter your  godaddy.com API SECRET")
+    godaddy_com_api_secret = input()
 
-        print("# 请输入您 godaddy.com 的API SECRET")
-        print("# Please enter your  godaddy.com API SECRET")
-        godaddy_com_api_secret = input()
+    basic_info['api_key'] = godaddy_com_api_key
+    basic_info['api_secret'] = godaddy_com_api_secret
 
-        return {"api_key": godaddy_com_api_key, "api_secret": godaddy_com_api_secret}
-
-    def gen_godaddy_com_config(self):
-        self.basic_info['api_key'] = self.api_key
-        self.basic_info['api_secret'] = self.api_secret
-        return self.basic_info
+    return basic_info
 
 
-class DnspodCnConf:
-    def __init__(self, basic_info, secret_id, secret_key):
-        self.basic_info = basic_info
-        self.secret_id = secret_id
-        self.secret_key = secret_key
+# 建立dnspod.cn的配置文件
+def gen_dnspod_cn_info(basic_info):
+    print("# 请输入您 dnspod.cn 的API KEY")
+    print("# Please enter your  dnspod.cn API KEY")
+    dnspod_cn_secret_id = input()
 
-    @staticmethod
-    def get_dnspod_cn_info():
-        print("# 请输入您 dnspod.cn 的API KEY")
-        print("# Please enter your  dnspod.cn API KEY")
-        dnspod_cn_secret_id = input()
+    print("# 请输入您 dnspod.cn 的API SECRET")
+    print("# Please enter your  dnspod.cn API SECRET")
+    dnspod_cn_secret_key = input()
 
-        print("# 请输入您 dnspod.cn 的API SECRET")
-        print("# Please enter your  dnspod.cn API SECRET")
-        dnspod_cn_secret_key = input()
+    basic_info['secret_id'] = dnspod_cn_secret_id
+    basic_info['secret_key'] = dnspod_cn_secret_key
 
-        return {"secret_id": dnspod_cn_secret_id, "secret_key": dnspod_cn_secret_key}
-
-    def gen_dnspod_cn_config(self):
-        self.basic_info['secret_id'] = self.secret_id
-        self.basic_info['secret_key'] = self.secret_key
-        return self.basic_info
+    return basic_info
 
 
 def proc_config():
@@ -156,31 +134,28 @@ def proc_config():
 
     if basic_info['service_provider'] == "1":
         del basic_info['service_provider']
-        he_net_password = HeNetConfig.get_he_net_info()
-        he_net_config = HeNetConfig(basic_info, he_net_password)
-        return he_net_config.gen_he_net_config(), "he.net"
+        he_net_config = gen_he_net_config(basic_info)
+        return he_net_config, "he.net"
 
-    if basic_info['service_provider'] == "2":
+    elif basic_info['service_provider'] == "2":
         del basic_info['service_provider']
-        gandi_net_api_key = GandiNetConf.get_gandi_net_info()
-        gandi_net_config = GandiNetConf(basic_info, gandi_net_api_key)
-        return gandi_net_config.gen_gandi_net_config(), "gandi.net"
+        gandi_net_config = gen_gandi_net_info(basic_info)
+        return gandi_net_config, "gandi.net"
 
-    if basic_info['service_provider'] == "3":
+    elif basic_info['service_provider'] == "3":
         del basic_info['service_provider']
-        godaddy_com_api_info = GodaddyComConf.get_godaddy_com_info()
-        godaddy_com_config = GodaddyComConf(basic_info, godaddy_com_api_info['api_key'],
-                                            godaddy_com_api_info['api_secret'])
-        return godaddy_com_config.gen_godaddy_com_config(), "godaddy.com"
+        godaddy_com_config = gen_godaddy_com_info(basic_info)
+        return godaddy_com_config, "godaddy.com"
 
-    if basic_info['service_provider'] == "4":
+    elif basic_info['service_provider'] == "4":
         del basic_info['service_provider']
-        dnspod_cn_api_info = DnspodCnConf.get_dnspod_cn_info()
-        dnspod_cn_config = DnspodCnConf(basic_info, dnspod_cn_api_info['secret_id'],
-                                        dnspod_cn_api_info['secret_key'])
-        return dnspod_cn_config.gen_dnspod_cn_config(), "dnspod.cn"
+        dnspod_cn_config = gen_dnspod_cn_info(basic_info)
+        return dnspod_cn_config, "dnspod.cn"
+    else:
+        return None
 
 
+# 整合配置文件
 def proc_config_final(config_final, config_input, service_provider):
     if service_provider in config_final:
         config_final[service_provider].append(config_input)
@@ -189,6 +164,7 @@ def proc_config_final(config_final, config_input, service_provider):
     return config_final
 
 
+# 写入文件
 def write_config_to_file(i):
     config_file_path = os.getcwd() + '/config.json'
     o = open(config_file_path, 'w')
@@ -196,7 +172,7 @@ def write_config_to_file(i):
     o.close()
 
 
-if __name__ == "__main__":
+def run():
     config_output = dict()
 
     while True:
@@ -225,3 +201,7 @@ if __name__ == "__main__":
     write_config_to_file(config_output)
     print("# 文件保存完毕，配置信息已保存到\"config.json\"文件中")
     print("# 程序退出")
+
+
+if __name__ == "__main__":
+    run()
