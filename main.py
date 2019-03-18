@@ -45,17 +45,20 @@ def get_my_ip(ip_ver):
         return my_ipv6
 
 
+# 比较新旧BI
 def compare_ip_with_dig(full_domain, rr_type, ip_now):
     dig_content = resolver.query(full_domain, rr_type)
-    if dig_content == ip_now:
+    if dig_content[0] == ip_now:
         return False
     else:
         return dig_content[0]
 
 
+# 写日志
 def write_to_log(full_domain, newest_ip, rr_type, update_status, output_msg):
     time_now = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
-    log_content = time_now + ' ' + full_domain + " " + newest_ip + " " + rr_type + " " + update_status + " " + output_msg + '\n'
+    log_content = time_now + ' ' + full_domain + " " + newest_ip + " " + rr_type + " " + update_status + " " + str(
+        output_msg) + '\n'
     o_log = open(log_file_path, "a")
     o_log.write(log_content)
     o_log.close()
@@ -75,10 +78,13 @@ for i in service_provider:
             my_ip = get_my_ip(k['ip_version'])
 
             if compare_ip_with_dig(full_domain, record_type, my_ip) is False:
-                continue
+                pass
             else:
-                req_content = HeDynamicDNS(password, full_domain, my_ip).req_content()
-                write_to_log(full_domain, my_ip, record_type, "update_success", req_content)
+                req_content = he_dyn_dns(password, full_domain, my_ip)
+                if req_content:
+                    write_to_log(full_domain, my_ip, record_type, "update_success", req_content)
+                else:
+                    write_to_log(full_domain, my_ip, record_type, "update_fail", req_content)
 
     # gandi.net
     elif i == "gandi.net":
@@ -94,20 +100,23 @@ for i in service_provider:
             gandi_main = GandiDynDNS(api_key, domain_name, sub_domain)
 
             domain_record = gandi_main.get_domain_records()
+
+            # 若不存在子域名则建立
             if domain_record is None:
                 req_content = gandi_main.create_record(record_type, my_ip)
-                if req_content[0]:
-                    write_to_log(sub_domain + '.' + domain_name, my_ip, record_type, "create_success", req_content[1])
+                if req_content:
+                    write_to_log(sub_domain + '.' + domain_name, my_ip, record_type, "create_success", '')
                 else:
-                    write_to_log(sub_domain + '.' + domain_name, my_ip, record_type, "create_fail", req_content[1])
+                    write_to_log(sub_domain + '.' + domain_name, my_ip, record_type, "create_fail", req_content)
+            # 若子域名的记录与当前IP一直则pass，否则则更新记录
             elif domain_record == my_ip:
                 pass
             else:
                 req_content = gandi_main.update_record(record_type, my_ip)
-                if req_content[0]:
-                    write_to_log(sub_domain + '.' + domain_name, my_ip, record_type, "update_success", req_content[1])
+                if req_content:
+                    write_to_log(sub_domain + '.' + domain_name, my_ip, record_type, "update_success", '')
                 else:
-                    write_to_log(sub_domain + '.' + domain_name, my_ip, record_type, "update_fail", req_content[1])
+                    write_to_log(sub_domain + '.' + domain_name, my_ip, record_type, "update_fail", req_content)
 
     # godaddy.com
     elif i == "godaddy.com":
@@ -124,17 +133,26 @@ for i in service_provider:
             godaddy_main = GodaddyDynDNS(api_key, api_secret, domain_name, sub_domain, record_type, my_ip)
 
             domain_record = godaddy_main.get_record()
+            # 若子域名的记录与当前IP一直则pass，否则则更新记录
             if domain_record[0]:
                 if domain_record[1] == my_ip:
-                    continue
+                    pass
                 else:
                     req_content = godaddy_main.update_record()
-                    write_to_log(sub_domain + '.' + domain_name, my_ip, record_type, "update_success", req_content)
-            elif domain_record is None:
+                    if req_content:
+                        write_to_log(sub_domain + '.' + domain_name, my_ip, record_type, "update_success", '')
+                    else:
+                        write_to_log(sub_domain + '.' + domain_name, my_ip, record_type, "update_fail", req_content)
+            # 若不存在子域名则建立
+            elif domain_record[0] is None:
                 req_content = godaddy_main.add_record()
-                write_to_log(sub_domain + '.' + domain_name, my_ip, record_type, "create_success", req_content)
+                if req_content:
+                    write_to_log(sub_domain + '.' + domain_name, my_ip, record_type, "create_success", '')
+                else:
+                    write_to_log(sub_domain + '.' + domain_name, my_ip, record_type, "create_fail", req_content)
             else:
-                pass
+                write_to_log(sub_domain + '.' + domain_name, my_ip, record_type, "fail", domain_record[1])
+
 
     elif i == "dnspod.cn":
         from main_func.DnspodDynDNS import *
@@ -150,6 +168,7 @@ for i in service_provider:
             dnspod_main = DnspodDynDNS(secret_id, secret_key, domain_name, sub_domain, record_type, my_ip)
 
             record_info = dnspod_main.get_record()
+            # 若不存在子域名则建立
             if record_info is None:
                 req_content = dnspod_main.create_record()
                 if req_content[0]:
@@ -158,6 +177,7 @@ for i in service_provider:
                     write_to_log(sub_domain + '.' + domain_name, my_ip, record_type, "create_fail", req_content[1])
             elif record_info[0] is False:
                 write_to_log(sub_domain + '.' + domain_name, my_ip, record_type, "update_fail", record_info[1])
+            # 若子域名的记录与当前IP一直则pass，否则则更新记录
             else:
                 if record_info[0] == my_ip:
                     continue

@@ -42,9 +42,9 @@ class GandiDynDNS:
         r_content = r.content.decode()
         r_content = json.loads(r_content)
         if r_content['message'] == "DNS Record Created":
-            return True, r_content
+            return r_content
         else:
-            return False, r_content
+            return r_content
 
     def update_record(self, rr_type, rr_ip):
         url = 'https://dns.api.gandi.net/api/v5/domains/' + self.domain_name + '/records/' + self.sub_domain + '/' + rr_type
@@ -62,6 +62,6 @@ class GandiDynDNS:
         r_content = r.content.decode()
         r_content = json.loads(r_content)
         if r_content['message'] == "DNS Record Created":
-            return True, r_content
+            return True
         else:
-            return False, r_content
+            return r_content

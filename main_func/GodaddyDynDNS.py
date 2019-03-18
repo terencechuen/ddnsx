@@ -65,7 +65,6 @@ class GodaddyDynDNS:
         ]
 
         r = requests.put(url, data=json.dumps(payload), headers=headers)
-        print(r.content.decode())
         if r.status_code is 200:
             return True
         else:
