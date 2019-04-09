@@ -1,6 +1,14 @@
 import json
 import os
 
+# 服务商字典
+service_provider_list = [
+    "he.net",
+    "gandi.net",
+    "godaddy.com",
+    "dnspod.cn"
+]
+
 
 # 交互：获取域名、子域名、DNS服务商、DNS记录类型以及IP版本
 def get_basic_info():
@@ -16,11 +24,12 @@ def get_basic_info():
 
     print("# 请选择您的DNS服务商")
     print("# Please choose your DNS service provider")
-    print("1. he.net")
-    print("2. gandi.net")
-    print("3. godaddy.com")
-    print("4. dnspod.cn")
+    loop_start = 1
+    for i in service_provider_list:
+        print(str(loop_start) + "：" + i)
+        loop_start += 1
     service_provider = input()
+    service_provider = service_provider_list[int(service_provider) - 1]
     print("\n")
 
     # 交互：获取解析类型
@@ -79,6 +88,7 @@ def gen_he_net_config(basic_info):
     print("# 请输入您 he.net 的账户密码")
     print("# Please enter your he.net account password")
     he_net_password = input()
+    print("\n")
 
     full_domain = basic_info['sub_domain'] + '.' + basic_info['domain_name']
     basic_info['password'] = he_net_password
@@ -92,8 +102,10 @@ def gen_gandi_net_info(basic_info):
     print("# 请输入您 gandi.net 的API KEY")
     print("# Please enter your gandi.net API KEY")
     gandi_api_key = input()
+    print("\n")
 
     basic_info['api_key'] = gandi_api_key
+
     return basic_info
 
 
@@ -129,34 +141,9 @@ def gen_dnspod_cn_info(basic_info):
     return basic_info
 
 
-def proc_config():
-    basic_info = get_basic_info()
-
-    if basic_info['service_provider'] == "1":
-        del basic_info['service_provider']
-        he_net_config = gen_he_net_config(basic_info)
-        return he_net_config, "he.net"
-
-    elif basic_info['service_provider'] == "2":
-        del basic_info['service_provider']
-        gandi_net_config = gen_gandi_net_info(basic_info)
-        return gandi_net_config, "gandi.net"
-
-    elif basic_info['service_provider'] == "3":
-        del basic_info['service_provider']
-        godaddy_com_config = gen_godaddy_com_info(basic_info)
-        return godaddy_com_config, "godaddy.com"
-
-    elif basic_info['service_provider'] == "4":
-        del basic_info['service_provider']
-        dnspod_cn_config = gen_dnspod_cn_info(basic_info)
-        return dnspod_cn_config, "dnspod.cn"
-    else:
-        return None
-
-
 # 整合配置文件
-def proc_config_final(config_final, config_input, service_provider):
+def proc_config_final(config_final, config_input):
+    service_provider = config_input["service_provider"]
     if service_provider in config_final:
         config_final[service_provider].append(config_input)
     else:
@@ -176,12 +163,23 @@ def run():
     config_output = dict()
 
     while True:
-        config_temp = proc_config()
-        config_output = proc_config_final(config_output, config_temp[0], config_temp[1])
+        basic_info = get_basic_info()
+        if basic_info['service_provider'] == "he.net":
+            config_temp = gen_he_net_config(basic_info)
+        elif basic_info['service_provider'] == "gandi.net":
+            config_temp = gen_gandi_net_info(basic_info)
+        elif basic_info['service_provider'] == "godaddy.com":
+            config_temp = gen_godaddy_com_info(basic_info)
+        elif basic_info['service_provider'] == "dnspod.cn":
+            config_temp = gen_dnspod_cn_info(basic_info)
+        else:
+            return None
+
+        config_output = proc_config_final(config_output, config_temp)
         print("# 请确认您的配置信息\n")
         print("###### 以下为您的配置信息 ######")
         print(json.dumps(config_output, indent=1, sort_keys=True))
-        print("###### 以上为您的配置信息 ######")
+        print("###### 以上为您的配置信息 ######\n")
         print("请根据实际情况选择，回车确认：")
         print("# 1. 完成DDNS域名信息，保存配置到文件并退出")
         print("# 2. 继续添加DDNS域名信息")
@@ -190,6 +188,7 @@ def run():
         if req_input == "1":
             break
         elif req_input == "2":
+            print("\n")
             continue
         elif req_input == "3":
             print("# 程序退出")
